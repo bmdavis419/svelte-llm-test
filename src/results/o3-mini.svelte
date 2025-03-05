@@ -1,74 +1,74 @@
 <script lang="ts">
-    // Using the new Svelte 5 runes syntax, we mark reactive state using “⟡”
-    // (This assumes your Svelte 5 setup recognizes the “⟡” rune as a state declaration.)
-    ⟡ todos: { id: number; text: string; done: boolean }[] = [];
-    ⟡ newTodo: string = "";
-  
-    // A simple id counter (this isn’t shown in the UI)
-    let nextId: number = 1;
-  
-    // Add a new todo if there's valid (nonempty) input.
-    function addTodo(): void {
-      if (!newTodo.trim()) return;
-      todos = [
-        ...todos,
-        { id: nextId++, text: newTodo.trim(), done: false }
-      ];
-      newTodo = "";
-    }
-  
-    // Toggle a todo's "done" status.
-    function toggleTodo(id: number): void {
-      todos = todos.map((todo) =>
-        todo.id === id ? { ...todo, done: !todo.done } : todo
-      );
-    }
-  
-    // Delete a todo from the list.
-    function deleteTodo(id: number): void {
-      todos = todos.filter((todo) => todo.id !== id);
-    }
+	type Todo = { id: number; text: string; done: boolean };
+
+	// Reactive state for todos and new todo input
+	let todos = $state<Todo[]>([{ id: Date.now(), text: 'Learn Svelte 5', done: false }]);
+	let newTodoText = $state<string>('');
+
+	// Derived state for remaining todos
+	let remaining = $derived<number>(() => todos.filter((todo) => !todo.done).length);
+
+	// Add a new todo
+	function addTodo() {
+		if (!newTodoText.trim()) return;
+		todos.push({ id: Date.now(), text: newTodoText.trim(), done: false });
+		newTodoText = '';
+	}
+
+	// Toggle todo done status
+	function toggleDone(todo: Todo) {
+		todo.done = !todo.done;
+	}
+
+	// Delete a todo
+	function deleteTodo(todo: Todo) {
+		todos = todos.filter((t) => t.id !== todo.id);
+	}
 </script>
 
-<div class="mx-auto mt-10 max-w-md rounded bg-white p-6 shadow-md">
+<div class="mx-auto mt-10 max-w-md rounded border bg-white p-5 shadow">
 	<h1 class="mb-4 text-center text-2xl font-bold">Todo App</h1>
 
-	<div class="mb-4 flex">
+	<div class="mb-4">
 		<input
 			type="text"
-			bind:value={newTodo}
 			placeholder="Enter new todo"
-			class="flex-1 rounded-l border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-			on:keydown={(e) => e.key === 'Enter' && addTodo()}
+			bind:value={newTodoText}
+			class="w-full rounded border p-2 focus:ring focus:outline-none"
 		/>
 		<button
-			on:click={addTodo}
-			class="rounded-r bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600"
+			onclick={addTodo}
+			class="mt-2 w-full rounded bg-blue-500 p-2 text-white transition hover:bg-blue-600"
 		>
-			Add
+			Add Todo
 		</button>
 	</div>
 
-	{#if todos.length === 0}
-		<p class="text-center text-gray-500">No todos yet.</p>
-	{/if}
-
 	<ul>
 		{#each todos as todo (todo.id)}
-			<li class="flex items-center justify-between border-b border-gray-200 py-2">
-				<div class="flex items-center">
-					<input
-						type="checkbox"
-						class="mr-3"
-						checked={todo.done}
-						on:change={() => toggleTodo(todo.id)}
-					/>
-					<span class:line-through={todo.done}>{todo.text}</span>
+			<li class="flex items-center justify-between border-b p-2">
+				<span class={todo.done ? 'text-gray-500 line-through' : ''}>
+					{todo.text}
+				</span>
+				<div>
+					<button
+						onclick={() => toggleDone(todo)}
+						class="mr-2 rounded border p-1 text-sm transition hover:bg-gray-200"
+					>
+						{todo.done ? 'Undone' : 'Done'}
+					</button>
+					<button
+						onclick={() => deleteTodo(todo)}
+						class="rounded border p-1 text-sm transition hover:bg-red-200"
+					>
+						Delete
+					</button>
 				</div>
-				<button on:click={() => deleteTodo(todo.id)} class="text-red-500 hover:text-red-700">
-					Delete
-				</button>
 			</li>
 		{/each}
 	</ul>
+
+	<div class="mt-4 text-center">
+		<p>Remaining todos: {remaining}</p>
+	</div>
 </div>
